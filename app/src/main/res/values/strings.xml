@@ -1,3 +1,16 @@
 <resources>
-    <string name="app_name">TheTimesTechTest</string>
+    <string name="app_name">The Times Tech Test</string>
+
+    <string name="screen_title">Top Stack Overflow Users</string>
+
+    <string name="reputation_format">%1$s reputation</string>
+    <string name="followed_indicator">Following</string>
+    <string name="follow_user">Follow user</string>
+    <string name="unfollow_user">Unfollow user</string>
+
+    <string name="error_title">Couldn\'t reach Stack Overflow</string>
+    <string name="retry">Try again</string>
+
+    <string name="empty_title">Nobody\'s very popular at the moment</string>
+    <string name="empty_subtitle">Pull down to refresh and see if that changes.</string>
 </resources>

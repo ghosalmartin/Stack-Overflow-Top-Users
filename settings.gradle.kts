@@ -21,3 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "TheTimesTechTest"
 include(":app")
+include(":domain")
+include(":data")

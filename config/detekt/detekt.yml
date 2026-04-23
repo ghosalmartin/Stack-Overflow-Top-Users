@@ -1,0 +1,23 @@
+complexity:
+  LongParameterList:
+    active: true
+    ignoreAnnotated: [ 'Composable' ]
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false
+  SwallowedException:
+    active: false
+
+naming:
+  FunctionNaming:
+    active: true
+    ignoreAnnotated: [ 'Composable' ]
+
+style:
+  MagicNumber:
+    active: true
+    excludes: [ '**/ui/theme/**', '**/test/**' ]
+  MaxLineLength:
+    active: true
+    maxLineLength: 140

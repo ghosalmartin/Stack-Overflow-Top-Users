@@ -11,6 +11,8 @@ sealed interface UsersViewState {
         data class UserList(
             val users: ImmutableList<UserRowUiModel>,
             val isRefreshing: Boolean = false,
+            val hasMore: Boolean = false,
+            val isAppending: Boolean = false,
         ) : Loaded
         data object EmptyUserList : Loaded
     }
@@ -26,6 +28,8 @@ fun UsersUiState.toViewState(): UsersViewState =
             else -> UsersViewState.Loaded.UserList(
                 users = users.map { it.toUiModel() }.toImmutableList(),
                 isRefreshing = isRefreshing,
+                hasMore = hasMore,
+                isAppending = isAppending,
             )
         }
         is UsersUiState.Error -> UsersViewState.Error(message)

@@ -6,6 +6,8 @@ sealed interface UsersUiState {
     data class Loaded(
         val users: List<UserRow>,
         val isRefreshing: Boolean = false,
+        val hasMore: Boolean = false,
+        val isAppending: Boolean = false,
     ) : UsersUiState
 
     data class Error(

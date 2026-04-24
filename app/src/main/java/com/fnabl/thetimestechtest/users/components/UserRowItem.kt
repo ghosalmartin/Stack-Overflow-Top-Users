@@ -77,11 +77,7 @@ private fun UserDetails(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        AnimatedVisibility(
-            visible = row.isFollowed,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically(),
-        ) {
+        AnimatedVisibility(visible = row.isFollowed) {
             Text(
                 text = stringResource(R.string.followed_indicator),
                 style = MaterialTheme.typography.labelSmall,

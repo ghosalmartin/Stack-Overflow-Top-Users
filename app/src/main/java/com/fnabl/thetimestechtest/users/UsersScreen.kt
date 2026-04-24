@@ -1,6 +1,9 @@
 package com.fnabl.thetimestechtest.users
 
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -48,8 +51,10 @@ fun UsersContent(
             )
         },
     ) { padding ->
-        Crossfade(
+        AnimatedContent(
             targetState = state,
+            contentKey = { it::class },
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
             label = "users-state",
             modifier = Modifier.fillMaxSize().padding(padding),
         ) { current ->
@@ -59,7 +64,10 @@ fun UsersContent(
                 is UsersViewState.Loaded.UserList -> UserList(
                     users = current.users,
                     isRefreshing = current.isRefreshing,
+                    hasMore = current.hasMore,
+                    isAppending = current.isAppending,
                     onRefresh = { onIntent(UsersIntent.Refresh) },
+                    onLoadMore = { onIntent(UsersIntent.LoadMore) },
                     onToggleFollow = { id -> onIntent(UsersIntent.ToggleFollow(id)) },
                 )
 

@@ -47,6 +47,41 @@ class UsersStateReducerTest {
     }
 
     @Test
+    fun `loaded state propagates nextPage as hasMore and isAppending`() {
+        // Given
+        val users = listOf(User(id = 1L, displayName = "Alice", reputation = 100, profileImageUrl = "http://img/1"))
+
+        // When
+        val state =
+            reduceUsersState(
+                TopUsersState.Loaded(users = users, nextPage = 2, isAppending = true),
+                followedUserIds = emptySet(),
+            )
+
+        // Then
+        val loaded = state as UsersUiState.Loaded
+        assertTrue(loaded.hasMore)
+        assertTrue(loaded.isAppending)
+    }
+
+    @Test
+    fun `loaded state with null nextPage yields hasMore=false`() {
+        // Given / When
+        val state =
+            reduceUsersState(
+                TopUsersState.Loaded(
+                    users = listOf(User(id = 1L, displayName = "Alice", reputation = 100, profileImageUrl = "http://img/1")),
+                    nextPage = null,
+                ),
+                followedUserIds = emptySet(),
+            )
+
+        // Then
+        val loaded = state as UsersUiState.Loaded
+        assertEquals(false, loaded.hasMore)
+    }
+
+    @Test
     fun `failed state with message surfaces that message`() {
         // Given / When
         val state = reduceUsersState(TopUsersState.Failed(RuntimeException("No network")), followedUserIds = emptySet())

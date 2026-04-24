@@ -36,12 +36,17 @@ class UsersViewModel @Inject constructor(
     fun onIntent(intent: UsersIntent) {
         when (intent) {
             UsersIntent.Refresh -> refresh()
+            UsersIntent.LoadMore -> loadMore()
             is UsersIntent.ToggleFollow -> toggleFollow(intent.userId)
         }
     }
 
     private fun refresh() {
         viewModelScope.launch { usersRepository.refresh() }
+    }
+
+    private fun loadMore() {
+        viewModelScope.launch { usersRepository.loadMore() }
     }
 
     private fun toggleFollow(userId: Long) {

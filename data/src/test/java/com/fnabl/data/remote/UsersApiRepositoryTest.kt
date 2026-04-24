@@ -117,6 +117,100 @@ class UsersApiRepositoryTest {
     }
 
     @Test
+    fun `loadMore appends the next page to the cached users`() = runTest {
+        // Given: first page loaded with hasMore
+        coEvery { api.getTopUsers(page = 1, pageSize = any()) } returns UsersResponseDto(
+            items = listOf(userDto(id = 1L, name = "Alice")),
+            hasMore = true,
+        )
+        repo.refresh()
+
+        // And: second page response set up
+        coEvery { api.getTopUsers(page = 2, pageSize = any()) } returns UsersResponseDto(
+            items = listOf(userDto(id = 2L, name = "Bob")),
+            hasMore = false,
+        )
+
+        // When
+        repo.loadMore()
+
+        // Then
+        val loaded = repo.topUsers.value as TopUsersState.Loaded
+        assertEquals(listOf("Alice", "Bob"), loaded.users.map { it.displayName })
+        assertFalse(loaded.isAppending)
+        assertEquals(null, loaded.nextPage)
+    }
+
+    @Test
+    fun `loadMore failure keeps cached data and clears isAppending`() = runTest {
+        // Given: first page loaded with hasMore
+        coEvery { api.getTopUsers(page = 1, pageSize = any()) } returns UsersResponseDto(
+            items = listOf(userDto(id = 1L, name = "Alice")),
+            hasMore = true,
+        )
+        repo.refresh()
+
+        // And: second page throws
+        coEvery { api.getTopUsers(page = 2, pageSize = any()) } throws RuntimeException("500")
+
+        // When
+        repo.loadMore()
+
+        // Then: cache still holds original users, isAppending cleared, nextPage intact for retry
+        val loaded = repo.topUsers.value as TopUsersState.Loaded
+        assertEquals(listOf("Alice"), loaded.users.map { it.displayName })
+        assertFalse(loaded.isAppending)
+        assertEquals(2, loaded.nextPage)
+    }
+
+    @Test
+    fun `loadMore is a no-op when an append is already in flight`() = runTest {
+        // Given: first page loaded
+        coEvery { api.getTopUsers(page = 1, pageSize = any()) } returns UsersResponseDto(
+            items = listOf(userDto(id = 1L, name = "Alice")),
+            hasMore = true,
+        )
+        repo.refresh()
+
+        // And: second-page response is gated
+        val deferred = CompletableDeferred<UsersResponseDto>()
+        coEvery { api.getTopUsers(page = 2, pageSize = any()) } coAnswers { deferred.await() }
+
+        // When: first loadMore starts and blocks on the gated response
+        val first = launch { repo.loadMore() }
+        advanceUntilIdle()
+        assertTrue((repo.topUsers.value as TopUsersState.Loaded).isAppending)
+
+        // And: a second loadMore is triggered while the first is still in flight
+        repo.loadMore()
+        advanceUntilIdle()
+
+        // Then: the API was only hit once for page 2
+        io.mockk.coVerify(exactly = 1) { api.getTopUsers(page = 2, pageSize = any()) }
+
+        // Cleanup
+        deferred.complete(UsersResponseDto(items = emptyList(), hasMore = false))
+        first.join()
+    }
+
+    @Test
+    fun `loadMore is a no-op when the cache has no next page`() = runTest {
+        // Given: first page loaded with hasMore=false
+        coEvery { api.getTopUsers(page = 1, pageSize = any()) } returns UsersResponseDto(
+            items = listOf(userDto(id = 1L, name = "Alice")),
+            hasMore = false,
+        )
+        repo.refresh()
+        val before = repo.topUsers.value
+
+        // When
+        repo.loadMore()
+
+        // Then: state is unchanged; no second-page fetch happened
+        assertEquals(before, repo.topUsers.value)
+    }
+
+    @Test
     fun `CancellationException is rethrown rather than wrapped in Failed`() = runTest {
         // Given
         coEvery { api.getTopUsers(pageSize = any()) } throws CancellationException("test")

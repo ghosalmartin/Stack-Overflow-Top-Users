@@ -40,6 +40,7 @@ class UsersViewModelTest {
             topUsersFlow.value = TopUsersState.Loading
             topUsersFlow.value = nextOutcome
         }
+        coEvery { loadMore() } just Runs
     }
 
     private val followRepository: FollowRepository = mockk {
@@ -96,6 +97,22 @@ class UsersViewModelTest {
 
         // Then
         coVerify(exactly = 2) { usersRepository.refresh() }
+    }
+
+    @Test
+    fun `LoadMore intent invokes the repository's loadMore`() = runTest(dispatcher) {
+        // Given
+        nextOutcome = TopUsersState.Loaded(listOf(user(1L, "Alice")))
+        val vm = UsersViewModel(usersRepository, followRepository)
+        vm.state.subscribedIn(this)
+        advanceUntilIdle()
+
+        // When
+        vm.onIntent(UsersIntent.LoadMore)
+        advanceUntilIdle()
+
+        // Then
+        coVerify(exactly = 1) { usersRepository.loadMore() }
     }
 
     @Test

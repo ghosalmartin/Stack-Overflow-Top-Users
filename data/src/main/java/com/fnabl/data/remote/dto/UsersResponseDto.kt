@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 internal data class UsersResponseDto(
     @SerialName("items") val items: List<UserDto> = emptyList(),
+    @SerialName("has_more") val hasMore: Boolean = false,
 )
 
 @Serializable

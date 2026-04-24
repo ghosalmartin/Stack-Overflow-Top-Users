@@ -12,6 +12,8 @@ fun reduceUsersState(
             UsersUiState.Loaded(
                 users = topUsersState.users.toRows(followedUserIds),
                 isRefreshing = topUsersState.isRefreshing,
+                hasMore = topUsersState.nextPage != null,
+                isAppending = topUsersState.isAppending,
             )
         is TopUsersState.Failed -> UsersUiState.Error(topUsersState.cause.toUserMessage())
     }

@@ -7,6 +7,8 @@ interface UsersRepository {
     val topUsers: Flow<TopUsersState>
 
     suspend fun refresh()
+
+    suspend fun loadMore()
 }
 
 sealed interface TopUsersState {
@@ -14,7 +16,9 @@ sealed interface TopUsersState {
 
     data class Loaded(
         val users: List<User>,
+        val nextPage: Int? = null,
         val isRefreshing: Boolean = false,
+        val isAppending: Boolean = false,
     ) : TopUsersState
 
     data class Failed(

@@ -1,5 +1,6 @@
 package com.fnabl.data.di
 
+import com.fnabl.data.remote.BackoffInterceptor
 import com.fnabl.data.remote.StackOverflowApi
 import dagger.Module
 import dagger.Provides
@@ -31,11 +32,16 @@ internal object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideBackoffInterceptor(json: Json): BackoffInterceptor = BackoffInterceptor(json = json)
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(backoffInterceptor: BackoffInterceptor): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BASIC
         }
         return OkHttpClient.Builder()
+            .addInterceptor(backoffInterceptor)
             .addInterceptor(logging)
             .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)

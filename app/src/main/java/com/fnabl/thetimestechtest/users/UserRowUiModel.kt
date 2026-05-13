@@ -10,6 +10,8 @@ data class UserRowUiModel(
     val displayReputation: String,
     val profileImageUrl: String,
     val isFollowed: Boolean,
+    val websiteUrl: String?,
+    val location: String?,
 )
 
 fun UserRow.toUiModel(): UserRowUiModel =
@@ -19,4 +21,6 @@ fun UserRow.toUiModel(): UserRowUiModel =
         displayReputation = NumberFormat.getNumberInstance(Locale.getDefault()).format(reputation),
         profileImageUrl = profileImageUrl,
         isFollowed = isFollowed,
+        websiteUrl = websiteUrl,
+        location = location,
     )

@@ -15,4 +15,6 @@ internal data class UserDto(
     @SerialName("display_name") val displayName: String,
     @SerialName("reputation") val reputation: Int,
     @SerialName("profile_image") val profileImage: String,
+    @SerialName("website_url") val websiteUrl: String? = null,
+    @SerialName("location") val location: String? = null,
 )

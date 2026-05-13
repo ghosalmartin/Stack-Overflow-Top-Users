@@ -8,6 +8,8 @@ internal fun UserDto.toDomain(): User =
         displayName = displayName,
         reputation = reputation,
         profileImageUrl = profileImage,
+        websiteUrl = websiteUrl,
+        location = location,
     )
 
 internal fun List<UserDto>.toDomain(): List<User> = map { it.toDomain() }

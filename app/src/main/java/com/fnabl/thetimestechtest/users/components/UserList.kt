@@ -34,6 +34,7 @@ fun UserList(
     onRefresh: () -> Unit,
     onLoadMore: () -> Unit,
     onToggleFollow: (Long) -> Unit,
+    onUserRowTapped: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
@@ -61,7 +62,7 @@ fun UserList(
             modifier = Modifier.fillMaxSize(),
         ) {
             items(items = users, key = { it.id }) { row ->
-                UserRowItem(row = row, onToggleFollow = onToggleFollow)
+                UserRowItem(row = row, onToggleFollow = onToggleFollow, onUserRowTapped = onUserRowTapped)
                 HorizontalDivider()
             }
             if (isAppending) {

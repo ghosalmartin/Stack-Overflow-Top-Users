@@ -6,4 +6,6 @@ data class UserRow(
     val reputation: Int,
     val profileImageUrl: String,
     val isFollowed: Boolean,
+    val websiteUrl: String?,
+    val location: String?,
 )

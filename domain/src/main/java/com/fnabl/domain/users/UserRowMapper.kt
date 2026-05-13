@@ -9,6 +9,13 @@ fun User.toRow(isFollowed: Boolean): UserRow =
         reputation = reputation,
         profileImageUrl = profileImageUrl,
         isFollowed = isFollowed,
+        websiteUrl = websiteUrl,
+        location = location,
     )
 
 fun List<User>.toRows(followedUserIds: Set<Long>): List<UserRow> = map { it.toRow(isFollowed = it.id in followedUserIds) }
+
+fun List<User>.selectUserRow(
+    id: Long,
+    isFollowed: Boolean,
+): UserRow? = firstOrNull { it.id == id }?.toRow(isFollowed)

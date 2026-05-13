@@ -19,11 +19,7 @@ class UsersStateReducerTest {
     @Test
     fun `loaded state maps users to rows and marks followed ones`() {
         // Given
-        val users =
-            listOf(
-                User(id = 1L, displayName = "Alice", reputation = 1_234, profileImageUrl = "http://img/1"),
-                User(id = 2L, displayName = "Bob", reputation = 9_000, profileImageUrl = "http://img/2"),
-            )
+        val users = listOf(user(1L, "Alice", 1_234), user(2L, "Bob", 9_000))
 
         // When
         val state = reduceUsersState(TopUsersState.Loaded(users), followedUserIds = setOf(2L))
@@ -49,7 +45,7 @@ class UsersStateReducerTest {
     @Test
     fun `loaded state propagates nextPage as hasMore and isAppending`() {
         // Given
-        val users = listOf(User(id = 1L, displayName = "Alice", reputation = 100, profileImageUrl = "http://img/1"))
+        val users = listOf(user(1L, "Alice"))
 
         // When
         val state =
@@ -69,10 +65,7 @@ class UsersStateReducerTest {
         // Given / When
         val state =
             reduceUsersState(
-                TopUsersState.Loaded(
-                    users = listOf(User(id = 1L, displayName = "Alice", reputation = 100, profileImageUrl = "http://img/1")),
-                    nextPage = null,
-                ),
+                TopUsersState.Loaded(users = listOf(user(1L, "Alice")), nextPage = null),
                 followedUserIds = emptySet(),
             )
 
@@ -107,4 +100,17 @@ class UsersStateReducerTest {
         // Then
         assertEquals(UsersUiState.Error("Something went wrong. Please try again."), state)
     }
+
+    private fun user(
+        id: Long,
+        name: String,
+        reputation: Int = 100,
+    ) = User(
+        id = id,
+        displayName = name,
+        reputation = reputation,
+        profileImageUrl = "http://img/$id",
+        websiteUrl = null,
+        location = null,
+    )
 }

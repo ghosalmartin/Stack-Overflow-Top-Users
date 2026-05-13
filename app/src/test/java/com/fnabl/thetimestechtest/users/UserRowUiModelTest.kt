@@ -21,6 +21,8 @@ class UserRowUiModelTest {
             reputation = 1_234_567,
             profileImageUrl = "http://img/alice.png",
             isFollowed = true,
+            websiteUrl = "https://alice.example",
+            location = "Wonderland",
         )
 
         // When

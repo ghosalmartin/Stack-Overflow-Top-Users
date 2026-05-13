@@ -174,7 +174,14 @@ class UsersViewModelTest {
     }
 
     private fun user(id: Long, name: String) =
-        User(id = id, displayName = name, reputation = 100, profileImageUrl = "http://img/$id")
+        User(
+            id = id,
+            displayName = name,
+            reputation = 100,
+            profileImageUrl = "http://img/$id",
+            websiteUrl = null,
+            location = null,
+        )
 
     private fun <T> StateFlow<T>.subscribedIn(scope: TestScope): StateFlow<T> {
         scope.backgroundScope.launch { collect {} }

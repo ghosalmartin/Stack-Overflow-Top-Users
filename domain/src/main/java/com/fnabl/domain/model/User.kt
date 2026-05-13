@@ -5,4 +5,6 @@ data class User(
     val displayName: String,
     val reputation: Int,
     val profileImageUrl: String,
+    val websiteUrl: String?,
+    val location: String?,
 )

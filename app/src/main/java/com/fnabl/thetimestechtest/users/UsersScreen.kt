@@ -25,6 +25,7 @@ import com.fnabl.thetimestechtest.users.components.UserList
 
 @Composable
 fun UsersScreen(
+    onNavigateToUserDetail: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: UsersViewModel = hiltViewModel(),
 ) {
@@ -32,6 +33,7 @@ fun UsersScreen(
     UsersContent(
         state = state,
         onIntent = viewModel::onIntent,
+        onUserRowTapped = onNavigateToUserDetail,
         modifier = modifier,
     )
 }
@@ -41,6 +43,7 @@ fun UsersScreen(
 fun UsersContent(
     state: UsersViewState,
     onIntent: (UsersIntent) -> Unit,
+    onUserRowTapped: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -69,6 +72,7 @@ fun UsersContent(
                     onRefresh = { onIntent(UsersIntent.Refresh) },
                     onLoadMore = { onIntent(UsersIntent.LoadMore) },
                     onToggleFollow = { id -> onIntent(UsersIntent.ToggleFollow(id)) },
+                    onUserRowTapped = onUserRowTapped,
                 )
 
                 UsersViewState.Loaded.EmptyUserList -> EmptyUserList()

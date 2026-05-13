@@ -10,6 +10,8 @@ internal fun UserDto.toDomain(): User =
         profileImageUrl = profileImage,
         websiteUrl = websiteUrl,
         location = location,
+        creationDate = creationDate,
+        lastModifiedDate = lastModifiedDate,
     )
 
 internal fun List<UserDto>.toDomain(): List<User> = map { it.toDomain() }

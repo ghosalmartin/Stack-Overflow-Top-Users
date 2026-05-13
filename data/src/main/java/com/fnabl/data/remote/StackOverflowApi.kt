@@ -10,8 +10,8 @@ internal interface StackOverflowApi {
     suspend fun getTopUsers(
         @Query("page") page: Int = 1,
         @Query("pagesize") pageSize: Int,
-        @Query("order") order: String = "desc",
-        @Query("sort") sort: String = "reputation",
+        @Query("sort") sort: String,
+        @Query("order") order: String,
         @Query("site") site: String = "stackoverflow",
     ): UsersResponseDto
 }

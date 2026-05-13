@@ -13,4 +13,15 @@
 
     <string name="empty_title">Nobody\'s very popular at the moment</string>
     <string name="empty_subtitle">Pull down to refresh and see if that changes.</string>
+
+    <string name="sort_action">Sort users</string>
+    <string name="sort_title">Sort by</string>
+    <string name="sort_by_reputation">Reputation</string>
+    <string name="sort_by_name">Name</string>
+    <string name="sort_by_creation">Date created</string>
+    <string name="sort_by_modified">Date updated</string>
+    <string name="sort_order_ascending">Ascending</string>
+    <string name="sort_order_descending">Descending</string>
+    <string name="sort_apply">Apply</string>
+    <string name="sort_cancel">Cancel</string>
 </resources>

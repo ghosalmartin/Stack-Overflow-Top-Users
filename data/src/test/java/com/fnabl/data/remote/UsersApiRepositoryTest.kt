@@ -3,7 +3,11 @@ package com.fnabl.data.remote
 import com.fnabl.data.remote.dto.UserDto
 import com.fnabl.data.remote.dto.UsersResponseDto
 import com.fnabl.domain.repository.TopUsersState
+import com.fnabl.domain.users.SortOrder
+import com.fnabl.domain.users.UserSort
+import com.fnabl.domain.users.UserSortSelection
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -31,7 +35,7 @@ class UsersApiRepositoryTest {
     @Test
     fun `successful refresh maps response to Loaded`() = runTest {
         // Given
-        coEvery { api.getTopUsers(pageSize = any()) } returns UsersResponseDto(
+        coEvery { api.getTopUsers(pageSize = any(), sort = any(), order = any()) } returns UsersResponseDto(
             items = listOf(userDto(id = 1L, name = "Alice")),
         )
 
@@ -49,7 +53,7 @@ class UsersApiRepositoryTest {
     fun `refresh failure wraps the throwable in Failed`() = runTest {
         // Given
         val cause = RuntimeException("500")
-        coEvery { api.getTopUsers(pageSize = any()) } throws cause
+        coEvery { api.getTopUsers(pageSize = any(), sort = any(), order = any()) } throws cause
 
         // When
         repo.refresh()
@@ -61,14 +65,14 @@ class UsersApiRepositoryTest {
     @Test
     fun `re-refresh exposes cached data with isRefreshing=true during the fetch`() = runTest {
         // Given: cache is already Loaded
-        coEvery { api.getTopUsers(pageSize = any()) } returns UsersResponseDto(
+        coEvery { api.getTopUsers(pageSize = any(), sort = any(), order = any()) } returns UsersResponseDto(
             items = listOf(userDto(id = 1L, name = "Alice")),
         )
         repo.refresh()
 
         // And: a second refresh whose response we can gate
         val deferred = CompletableDeferred<UsersResponseDto>()
-        coEvery { api.getTopUsers(pageSize = any()) } coAnswers { deferred.await() }
+        coEvery { api.getTopUsers(pageSize = any(), sort = any(), order = any()) } coAnswers { deferred.await() }
 
         // When: refresh starts but the API call hasn't returned
         val job = launch { repo.refresh() }
@@ -92,13 +96,13 @@ class UsersApiRepositoryTest {
     @Test
     fun `retry from Failed transitions through Loading before the next outcome`() = runTest {
         // Given: first refresh failed
-        coEvery { api.getTopUsers(pageSize = any()) } throws RuntimeException("boom")
+        coEvery { api.getTopUsers(pageSize = any(), sort = any(), order = any()) } throws RuntimeException("boom")
         repo.refresh()
         assertTrue(repo.topUsers.value is TopUsersState.Failed)
 
         // And: a second refresh whose response is gated
         val deferred = CompletableDeferred<UsersResponseDto>()
-        coEvery { api.getTopUsers(pageSize = any()) } coAnswers { deferred.await() }
+        coEvery { api.getTopUsers(pageSize = any(), sort = any(), order = any()) } coAnswers { deferred.await() }
 
         // When: retry starts
         val job = launch { repo.refresh() }
@@ -119,14 +123,14 @@ class UsersApiRepositoryTest {
     @Test
     fun `loadMore appends the next page to the cached users`() = runTest {
         // Given: first page loaded with hasMore
-        coEvery { api.getTopUsers(page = 1, pageSize = any()) } returns UsersResponseDto(
+        coEvery { api.getTopUsers(page = 1, pageSize = any(), sort = any(), order = any()) } returns UsersResponseDto(
             items = listOf(userDto(id = 1L, name = "Alice")),
             hasMore = true,
         )
         repo.refresh()
 
         // And: second page response set up
-        coEvery { api.getTopUsers(page = 2, pageSize = any()) } returns UsersResponseDto(
+        coEvery { api.getTopUsers(page = 2, pageSize = any(), sort = any(), order = any()) } returns UsersResponseDto(
             items = listOf(userDto(id = 2L, name = "Bob")),
             hasMore = false,
         )
@@ -144,14 +148,14 @@ class UsersApiRepositoryTest {
     @Test
     fun `loadMore failure keeps cached data and clears isAppending`() = runTest {
         // Given: first page loaded with hasMore
-        coEvery { api.getTopUsers(page = 1, pageSize = any()) } returns UsersResponseDto(
+        coEvery { api.getTopUsers(page = 1, pageSize = any(), sort = any(), order = any()) } returns UsersResponseDto(
             items = listOf(userDto(id = 1L, name = "Alice")),
             hasMore = true,
         )
         repo.refresh()
 
         // And: second page throws
-        coEvery { api.getTopUsers(page = 2, pageSize = any()) } throws RuntimeException("500")
+        coEvery { api.getTopUsers(page = 2, pageSize = any(), sort = any(), order = any()) } throws RuntimeException("500")
 
         // When
         repo.loadMore()
@@ -166,7 +170,7 @@ class UsersApiRepositoryTest {
     @Test
     fun `loadMore is a no-op when an append is already in flight`() = runTest {
         // Given: first page loaded
-        coEvery { api.getTopUsers(page = 1, pageSize = any()) } returns UsersResponseDto(
+        coEvery { api.getTopUsers(page = 1, pageSize = any(), sort = any(), order = any()) } returns UsersResponseDto(
             items = listOf(userDto(id = 1L, name = "Alice")),
             hasMore = true,
         )
@@ -174,7 +178,7 @@ class UsersApiRepositoryTest {
 
         // And: second-page response is gated
         val deferred = CompletableDeferred<UsersResponseDto>()
-        coEvery { api.getTopUsers(page = 2, pageSize = any()) } coAnswers { deferred.await() }
+        coEvery { api.getTopUsers(page = 2, pageSize = any(), sort = any(), order = any()) } coAnswers { deferred.await() }
 
         // When: first loadMore starts and blocks on the gated response
         val first = launch { repo.loadMore() }
@@ -186,7 +190,7 @@ class UsersApiRepositoryTest {
         advanceUntilIdle()
 
         // Then: the API was only hit once for page 2
-        io.mockk.coVerify(exactly = 1) { api.getTopUsers(page = 2, pageSize = any()) }
+        io.mockk.coVerify(exactly = 1) { api.getTopUsers(page = 2, pageSize = any(), sort = any(), order = any()) }
 
         // Cleanup
         deferred.complete(UsersResponseDto(items = emptyList(), hasMore = false))
@@ -196,7 +200,7 @@ class UsersApiRepositoryTest {
     @Test
     fun `loadMore is a no-op when the cache has no next page`() = runTest {
         // Given: first page loaded with hasMore=false
-        coEvery { api.getTopUsers(page = 1, pageSize = any()) } returns UsersResponseDto(
+        coEvery { api.getTopUsers(page = 1, pageSize = any(), sort = any(), order = any()) } returns UsersResponseDto(
             items = listOf(userDto(id = 1L, name = "Alice")),
             hasMore = false,
         )
@@ -211,9 +215,67 @@ class UsersApiRepositoryTest {
     }
 
     @Test
+    fun `initial currentSort is the default selection`() {
+        assertEquals(UserSortSelection.Default, repo.currentSort.value)
+    }
+
+    @Test
+    fun `refresh sends the current sort and order as query parameters`() = runTest {
+        // Given
+        coEvery {
+            api.getTopUsers(page = any(), pageSize = any(), sort = "reputation", order = "desc")
+        } returns UsersResponseDto(items = listOf(userDto(1L, "Alice")))
+
+        // When
+        repo.refresh()
+
+        // Then
+        coVerify(exactly = 1) {
+            api.getTopUsers(page = 1, pageSize = any(), sort = "reputation", order = "desc")
+        }
+    }
+
+    @Test
+    fun `setSort updates currentSort and refetches page 1 with the new params`() = runTest {
+        // Given: initial load
+        coEvery { api.getTopUsers(page = any(), pageSize = any(), sort = any(), order = any()) } returns
+            UsersResponseDto(items = listOf(userDto(1L, "Alice")), hasMore = true)
+        repo.refresh()
+        val newSelection = UserSortSelection(sort = UserSort.CREATION, order = SortOrder.ASC)
+        coEvery {
+            api.getTopUsers(page = 1, pageSize = any(), sort = "creation", order = "asc")
+        } returns UsersResponseDto(items = listOf(userDto(2L, "Bob")))
+
+        // When
+        repo.setSort(newSelection)
+
+        // Then: state replaced with fresh page 1; new sort selection exposed
+        assertEquals(newSelection, repo.currentSort.value)
+        val loaded = repo.topUsers.value as TopUsersState.Loaded
+        assertEquals("Bob", loaded.users.single().displayName)
+        coVerify(exactly = 1) {
+            api.getTopUsers(page = 1, pageSize = any(), sort = "creation", order = "asc")
+        }
+    }
+
+    @Test
+    fun `setSort with the current selection is a no-op`() = runTest {
+        // Given: initial load using the default sort
+        coEvery { api.getTopUsers(page = any(), pageSize = any(), sort = any(), order = any()) } returns
+            UsersResponseDto(items = listOf(userDto(1L, "Alice")))
+        repo.refresh()
+
+        // When: applying the same selection
+        repo.setSort(UserSortSelection.Default)
+
+        // Then: only the original refresh happened, no extra fetch
+        coVerify(exactly = 1) { api.getTopUsers(page = any(), pageSize = any(), sort = any(), order = any()) }
+    }
+
+    @Test
     fun `CancellationException is rethrown rather than wrapped in Failed`() = runTest {
         // Given
-        coEvery { api.getTopUsers(pageSize = any()) } throws CancellationException("test")
+        coEvery { api.getTopUsers(pageSize = any(), sort = any(), order = any()) } throws CancellationException("test")
 
         // When
         val outcome = runCatching { repo.refresh() }
@@ -227,5 +289,6 @@ class UsersApiRepositoryTest {
         displayName = name,
         reputation = 100,
         profileImage = "http://img/$id",
+        creationDate = 0L,
     )
 }

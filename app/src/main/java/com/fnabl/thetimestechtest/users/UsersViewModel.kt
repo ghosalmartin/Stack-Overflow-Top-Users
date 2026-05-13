@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fnabl.domain.repository.FollowRepository
 import com.fnabl.domain.repository.UsersRepository
+import com.fnabl.domain.users.UserSortSelection
 import com.fnabl.domain.users.UsersIntent
 import com.fnabl.domain.users.reduceUsersState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,11 +34,19 @@ class UsersViewModel @Inject constructor(
                 initialValue = UsersViewState.Loading,
             )
 
+    val sortSelection: StateFlow<UserSortSelection> =
+        usersRepository.currentSort.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT_MS),
+            initialValue = UserSortSelection.Default,
+        )
+
     fun onIntent(intent: UsersIntent) {
         when (intent) {
             UsersIntent.Refresh -> refresh()
             UsersIntent.LoadMore -> loadMore()
             is UsersIntent.ToggleFollow -> toggleFollow(intent.userId)
+            is UsersIntent.ApplySort -> applySort(intent.selection)
         }
     }
 
@@ -58,6 +67,10 @@ class UsersViewModel @Inject constructor(
                 followRepository.follow(userId)
             }
         }
+    }
+
+    private fun applySort(selection: UserSortSelection) {
+        viewModelScope.launch { usersRepository.setSort(selection) }
     }
 
     private companion object {

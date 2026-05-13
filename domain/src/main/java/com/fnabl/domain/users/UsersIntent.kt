@@ -8,4 +8,8 @@ sealed interface UsersIntent {
     data class ToggleFollow(
         val userId: Long,
     ) : UsersIntent
+
+    data class ApplySort(
+        val selection: UserSortSelection,
+    ) : UsersIntent
 }

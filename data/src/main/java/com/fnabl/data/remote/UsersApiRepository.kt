@@ -3,6 +3,9 @@ package com.fnabl.data.remote
 import com.fnabl.data.remote.dto.toDomain
 import com.fnabl.domain.repository.TopUsersState
 import com.fnabl.domain.repository.UsersRepository
+import com.fnabl.domain.users.SortOrder
+import com.fnabl.domain.users.UserSort
+import com.fnabl.domain.users.UserSortSelection
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,24 +20,16 @@ internal class UsersApiRepository
         private val cache = MutableStateFlow<TopUsersState>(TopUsersState.Loading)
         override val topUsers: StateFlow<TopUsersState> = cache.asStateFlow()
 
+        private val sortSelection = MutableStateFlow(UserSortSelection.Default)
+        override val currentSort: StateFlow<UserSortSelection> = sortSelection.asStateFlow()
+
         override suspend fun refresh() {
             cache.value =
                 when (val current = cache.value) {
                     is TopUsersState.Loaded -> current.copy(isRefreshing = true)
                     else -> TopUsersState.Loading
                 }
-            cache.value =
-                try {
-                    val response = api.getTopUsers(page = FIRST_PAGE, pageSize = PAGE_SIZE)
-                    TopUsersState.Loaded(
-                        users = response.items.toDomain(),
-                        nextPage = (FIRST_PAGE + 1).takeIf { response.hasMore },
-                    )
-                } catch (cancellation: CancellationException) {
-                    throw cancellation
-                } catch (throwable: Throwable) {
-                    TopUsersState.Failed(throwable)
-                }
+            cache.value = fetchPage(page = FIRST_PAGE)
         }
 
         @Suppress("ReturnCount")
@@ -46,7 +41,13 @@ internal class UsersApiRepository
             cache.value = current.copy(isAppending = true)
             cache.value =
                 try {
-                    val response = api.getTopUsers(page = next, pageSize = PAGE_SIZE)
+                    val response =
+                        api.getTopUsers(
+                            page = next,
+                            pageSize = PAGE_SIZE,
+                            sort = sortSelection.value.sort.toQuery(),
+                            order = sortSelection.value.order.toQuery(),
+                        )
                     current.copy(
                         users = current.users + response.items.toDomain(),
                         nextPage = (next + 1).takeIf { response.hasMore },
@@ -60,8 +61,48 @@ internal class UsersApiRepository
                 }
         }
 
+        override suspend fun setSort(selection: UserSortSelection) {
+            if (sortSelection.value == selection) return
+            sortSelection.value = selection
+            cache.value = TopUsersState.Loading
+            cache.value = fetchPage(page = FIRST_PAGE)
+        }
+
+        private suspend fun fetchPage(page: Int): TopUsersState =
+            try {
+                val response =
+                    api.getTopUsers(
+                        page = page,
+                        pageSize = PAGE_SIZE,
+                        sort = sortSelection.value.sort.toQuery(),
+                        order = sortSelection.value.order.toQuery(),
+                    )
+                TopUsersState.Loaded(
+                    users = response.items.toDomain(),
+                    nextPage = (page + 1).takeIf { response.hasMore },
+                )
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (throwable: Throwable) {
+                TopUsersState.Failed(throwable)
+            }
+
         private companion object {
             const val FIRST_PAGE = 1
             const val PAGE_SIZE = 20
         }
+    }
+
+private fun UserSort.toQuery(): String =
+    when (this) {
+        UserSort.REPUTATION -> "reputation"
+        UserSort.NAME -> "name"
+        UserSort.CREATION -> "creation"
+        UserSort.MODIFIED -> "modified"
+    }
+
+private fun SortOrder.toQuery(): String =
+    when (this) {
+        SortOrder.ASC -> "asc"
+        SortOrder.DESC -> "desc"
     }

@@ -4,6 +4,9 @@ import com.fnabl.domain.model.User
 import com.fnabl.domain.repository.FollowRepository
 import com.fnabl.domain.repository.TopUsersState
 import com.fnabl.domain.repository.UsersRepository
+import com.fnabl.domain.users.SortOrder
+import com.fnabl.domain.users.UserSort
+import com.fnabl.domain.users.UserSortSelection
 import com.fnabl.domain.users.UsersIntent
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -31,16 +34,24 @@ class UsersViewModelTest {
     private val dispatcher = StandardTestDispatcher()
 
     private val topUsersFlow = MutableStateFlow<TopUsersState>(TopUsersState.Loading)
+    private val sortFlow = MutableStateFlow(UserSortSelection.Default)
     private val followedIds = MutableStateFlow<Set<Long>>(emptySet())
     private var nextOutcome: TopUsersState = TopUsersState.Loaded(emptyList())
 
     private val usersRepository: UsersRepository = mockk {
         every { topUsers } returns topUsersFlow
+        every { currentSort } returns sortFlow
         coEvery { refresh() } coAnswers {
             topUsersFlow.value = TopUsersState.Loading
             topUsersFlow.value = nextOutcome
         }
         coEvery { loadMore() } just Runs
+        coEvery { setSort(any()) } coAnswers {
+            val selection = firstArg<UserSortSelection>()
+            sortFlow.value = selection
+            topUsersFlow.value = TopUsersState.Loading
+            topUsersFlow.value = nextOutcome
+        }
     }
 
     private val followRepository: FollowRepository = mockk {
@@ -155,6 +166,25 @@ class UsersViewModelTest {
     }
 
     @Test
+    fun `ApplySort intent delegates to repository setSort and exposes the new selection`() = runTest(dispatcher) {
+        // Given
+        nextOutcome = TopUsersState.Loaded(listOf(user(1L, "Alice")))
+        val vm = UsersViewModel(usersRepository, followRepository)
+        vm.state.subscribedIn(this)
+        vm.sortSelection.subscribedIn(this)
+        advanceUntilIdle()
+        val newSelection = UserSortSelection(sort = UserSort.CREATION, order = SortOrder.ASC)
+
+        // When
+        vm.onIntent(UsersIntent.ApplySort(newSelection))
+        advanceUntilIdle()
+
+        // Then
+        coVerify(exactly = 1) { usersRepository.setSort(newSelection) }
+        assertEquals(newSelection, vm.sortSelection.value)
+    }
+
+    @Test
     fun `followed ids stream re-derives isFollowed without another users repository call`() = runTest(dispatcher) {
         // Given
         nextOutcome = TopUsersState.Loaded(listOf(user(1L, "Alice"), user(2L, "Bob")))
@@ -181,6 +211,8 @@ class UsersViewModelTest {
             profileImageUrl = "http://img/$id",
             websiteUrl = null,
             location = null,
+            creationDate = 0L,
+            lastModifiedDate = null,
         )
 
     private fun <T> StateFlow<T>.subscribedIn(scope: TestScope): StateFlow<T> {

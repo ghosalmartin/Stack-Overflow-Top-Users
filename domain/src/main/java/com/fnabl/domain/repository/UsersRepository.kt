@@ -1,14 +1,20 @@
 package com.fnabl.domain.repository
 
 import com.fnabl.domain.model.User
+import com.fnabl.domain.users.UserSortSelection
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 
 interface UsersRepository {
     val topUsers: Flow<TopUsersState>
 
+    val currentSort: StateFlow<UserSortSelection>
+
     suspend fun refresh()
 
     suspend fun loadMore()
+
+    suspend fun setSort(selection: UserSortSelection)
 }
 
 sealed interface TopUsersState {

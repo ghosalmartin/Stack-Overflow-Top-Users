@@ -17,4 +17,6 @@ internal data class UserDto(
     @SerialName("profile_image") val profileImage: String,
     @SerialName("website_url") val websiteUrl: String? = null,
     @SerialName("location") val location: String? = null,
+    @SerialName("creation_date") val creationDate: Long,
+    @SerialName("last_modified_date") val lastModifiedDate: Long? = null,
 )

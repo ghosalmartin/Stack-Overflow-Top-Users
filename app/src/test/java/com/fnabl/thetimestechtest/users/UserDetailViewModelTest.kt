@@ -160,6 +160,8 @@ class UserDetailViewModelTest {
             profileImageUrl = "http://img/$id",
             websiteUrl = null,
             location = null,
+            creationDate = 0L,
+            lastModifiedDate = null,
         )
 
     private fun <T> StateFlow<T>.subscribedIn(scope: TestScope): StateFlow<T> {

@@ -112,5 +112,7 @@ class UsersStateReducerTest {
         profileImageUrl = "http://img/$id",
         websiteUrl = null,
         location = null,
+        creationDate = 0L,
+        lastModifiedDate = null,
     )
 }
